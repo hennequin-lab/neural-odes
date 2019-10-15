@@ -1,0 +1,5 @@
+(library
+ (name neural_odes)
+ (public_name neural-odes)
+ (libraries owl owl-ode owl-ode-sundials))
+

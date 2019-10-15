@@ -1,0 +1,5 @@
+(executable
+ (name max_likelihood)
+ (modules max_likelihood image)
+ (libraries cmdargs neural-odes owl-opt)
+ (preprocess (pps ppx-owl-opt)))
