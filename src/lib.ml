@@ -28,7 +28,8 @@ module Make (P : Prms) = struct
     let tspec = tspec duration duration in
     let batch_size, n = Mat.shape z1 in
     let m, n_prms = AD.Mat.shape theta in
-    assert (n = dim + 1 && m = 1 && Mat.shape z1 = Mat.shape adj1);
+    assert (m = 1);
+    assert (Mat.shape z1 = Mat.shape adj1);
     (* define augmented system to be run backwards in time *)
     let pack z adj grad = Mat.concatenate ~axis:1 [| z; adj; grad |] in
     let unpack s =
