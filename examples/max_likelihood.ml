@@ -20,13 +20,19 @@ module F = Neural_odes.Rbf_flow.Make (struct
 end)
 
 (* forward flow *)
-module G = Neural_odes.Lib.Generative_model (struct
+module BD = Neural_odes.Lib.Standard_gaussian_density (struct
   let dim = D.dim
-  let base_density_mu = Mat.zeros 1 dim
-  let base_density_sigma = 0.6
-  let abs_tol = 1E-5
-  let flow = F.flow
+  let sigma = 0.6
 end)
+
+module G =
+  Neural_odes.Lib.Generative_model
+    (struct
+      let dim = D.dim
+      let abs_tol = 1E-5
+      let flow = F.flow
+    end)
+    (BD)
 
 (* evaluate the density of end-points under the forward model *)
 let save_density theta =

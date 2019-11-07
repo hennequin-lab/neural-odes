@@ -9,6 +9,11 @@ module type Prms = sig
   val flow : ?duration:float -> theta:AD.t -> AD.t -> float -> AD.t
 end
 
+module type Base_density = sig
+  val log_base_density : AD.t -> AD.t
+  val sample : int -> Mat.mat
+end
+
 module type T = sig
   include Prms
 

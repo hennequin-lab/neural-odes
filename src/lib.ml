@@ -96,21 +96,8 @@ module Make (P : Prms) = struct
       end : Siso)
 end
 
-module Generative_model (P : sig
-  include Typ.Prms
-
-  val base_density_sigma : float
-end) =
-struct
+module Generative_model (P : Typ.Prms) (BD : Typ.Base_density) = struct
   include P
-
-  let log_base_density =
-    let const = AD.F (float dim *. log (Const.pi2 *. base_density_sigma)) in
-    let const2 = AD.F (Maths.sqr base_density_sigma) in
-    fun z ->
-      let d = AD.Maths.(sum ~axis:1 (sqr z) / const2) in
-      AD.Maths.((neg d - const) / F 2.)
-
 
   let canonical_basis = Mat.eye dim |> Mat.map_rows (fun r -> r)
   let solver = Owl_ode_sundials.cvode ~stiff:false ~relative_tol:0. ~abs_tol
@@ -121,7 +108,7 @@ struct
     let dx x t = AD.unpack_arr (flow ~theta (AD.pack_arr x) t) in
     let z0 =
       match batch with
-      | `batch_of_size s -> Mat.gaussian ~sigma:base_density_sigma s dim
+      | `batch_of_size s -> BD.sample s
       | `init x -> x
     in
     let batch_size, _ = Mat.shape z0 in
@@ -160,7 +147,7 @@ struct
     let _, _, s0 = forward ?duration ?dt:None ~z0:s1 ~theta in
     let z0 = Mat.get_slice [ []; [ 0; dim - 1 ] ] s0 in
     let delta_logp = Mat.get_slice [ []; [ -1 ] ] s0 in
-    let base = AD.unpack_arr (log_base_density (AD.pack_arr z0)) in
+    let base = AD.unpack_arr (BD.log_base_density (AD.pack_arr z0)) in
     Mat.(delta_logp + base)
 
 
@@ -173,7 +160,7 @@ struct
     let f _ s0 =
       let z0 = AD.Maths.get_slice [ []; [ 0; pred dim ] ] s0 in
       let delta_logp = AD.Maths.(get_slice [ []; [ -1 ] ] s0) in
-      AD.Maths.(sum' (delta_logp + log_base_density z0))
+      AD.Maths.(sum' (delta_logp + BD.log_base_density z0))
     in
     make_diff ?duration initial_conditions f
 end
@@ -184,3 +171,20 @@ let log_gaussian_density' mu sigma =
   fun z ->
     let d = Mat.(l2norm_sqr' (z - mu)) /. sigma /. sigma in
     (d -. const) /. 2.
+
+
+module Standard_gaussian_density (P : sig
+  val dim : int
+  val sigma : float
+end) =
+struct
+  let log_base_density =
+    let const = AD.F (float P.dim *. log (Const.pi2 *. P.sigma)) in
+    let const2 = AD.F (Maths.sqr P.sigma) in
+    fun z ->
+      let d = AD.Maths.(sum ~axis:1 (sqr z) / const2) in
+      AD.Maths.((neg d - const) / F 2.)
+
+
+  let sample batch_size = Mat.gaussian ~sigma:P.sigma batch_size P.dim
+end

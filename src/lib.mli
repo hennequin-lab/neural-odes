@@ -1,12 +1,7 @@
 open Typ
 module Make (P : Prms) : T
 
-module Generative_model (P : sig
-  include Typ.Prms
-
-  val base_density_mu : Mat.mat
-  val base_density_sigma : float
-end) : sig
+module Generative_model (P : Typ.Prms) (BD : Typ.Base_density) : sig
   include Typ.T
 
   val generate
@@ -20,3 +15,8 @@ end) : sig
 end
 
 val log_gaussian_density' : Mat.mat -> float -> Mat.mat -> float
+
+module Standard_gaussian_density (P : sig
+  val dim : int
+  val sigma : float
+end) : Typ.Base_density
