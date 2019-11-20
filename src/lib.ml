@@ -111,8 +111,9 @@ module Generative_model (P : Typ.Prms) (BD : Typ.Base_density) = struct
       | `batch_of_size s -> BD.sample s
       | `init x -> x
     in
-    let batch_size, _ = Mat.shape z0 in
+    let batch_size, d = Mat.shape z0 in
     let _, states = Ode.odeint solver dx z0 tspec () in
+    let states = if d = 1 then Mat.transpose states else states in
     Mat.reshape (Mat.row states (-1)) [| batch_size; -1 |]
 
 
