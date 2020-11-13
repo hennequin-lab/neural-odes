@@ -7,7 +7,7 @@ struct
   let dim = 2
 
   let sample =
-    let img = Mat.load_txt P.file in
+    let img = Mat.load_txt ~sep:" " P.file in
     let img = Mat.(255. $- img) in
     let z_max = Mat.max' img in
     let n, m = Mat.shape img in

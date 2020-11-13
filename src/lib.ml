@@ -14,11 +14,8 @@ module Make (P : Prms) = struct
     let batch_size = Mat.row_num z0 in
     let dx x t = AD.unpack_arr (flow ~theta (AD.pack_arr x) t) in
     let times, states = Ode.odeint solver dx z0 tspec () in
-    let last = Mat.reshape (Mat.row states (-1)) [| batch_size; -1 |] in
-    let states =
-      if batch_size > 1
-      then Arr.reshape states [| Mat.row_num times; batch_size; -1 |]
-      else states
+    let last =
+      states |> Arr.get_slice [ [ -1 ] ] |> fun v -> Arr.reshape v [| batch_size; -1 |]
     in
     Gc.minor ();
     times, states, last
@@ -61,7 +58,9 @@ module Make (P : Prms) = struct
       Mat.neg (pack dz da dg)
     in
     let _, states = Ode.odeint solver backward_flow s1 tspec () in
-    let s0 = Mat.reshape (Mat.row states (-1)) [| batch_size; -1 |] in
+    let s0 =
+      states |> Arr.get_slice [ [ -1 ] ] |> fun v -> Arr.reshape v [| batch_size; -1 |]
+    in
     let _, _, g = unpack s0 in
     Gc.minor ();
     Mat.sum ~axis:0 g
@@ -114,7 +113,7 @@ module Generative_model (P : Typ.Prms) (BD : Typ.Base_density) = struct
     let batch_size, d = Mat.shape z0 in
     let _, states = Ode.odeint solver dx z0 tspec () in
     let states = if d = 1 then Mat.transpose states else states in
-    Mat.reshape (Mat.row states (-1)) [| batch_size; -1 |]
+    states |> Arr.get_slice [ [ -1 ] ] |> fun v -> Arr.reshape v [| batch_size; -1 |]
 
 
   include Make (struct

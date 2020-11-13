@@ -33,7 +33,7 @@ end
 
 module O = Owl_opt_lbfgs.Make (Prms)
 
-let cost prms = f Prms.(prms.theta)
+let cost _ prms = f Prms.(prms.theta)
 
 let opt_prms =
   let prms0 = Prms.{ theta = AD.Mat.zeros 1 1 } in

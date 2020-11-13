@@ -1,3 +1,2 @@
-(lang dune 1.2)
-(using fmt 1.2)
+(lang dune 2.7)
 (name neural-odes)

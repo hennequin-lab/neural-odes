@@ -1,6 +1,7 @@
 open Printf
 open Neural_odes.Typ
 
+let _ = Printexc.record_backtrace true
 let dir = Cmdargs.(get_string "-d" |> force ~usage:"-d [dir]")
 let in_dir = sprintf "%s/%s" dir
 let batch_size = Cmdargs.(get_int "-bs" |> default 1)
@@ -11,7 +12,7 @@ module D = Image.Make (struct
   let file = Cmdargs.(get_string "-img" |> force ~usage:"-img path")
 end)
 
-let _ = Mat.save_txt (D.sample_batch 1000) (in_dir "true_samples")
+let _ = Mat.save_txt (D.sample_batch 1000) ~out:(in_dir "true_samples")
 
 module F = Neural_odes.Rbf_flow.Make (struct
   let dim = 2
@@ -41,12 +42,12 @@ let save_density theta =
 
 (* generate data from the model *)
 let test_gen theta =
-  let samples = G.generate ~theta (`batch_of_size 1000) in
-  Mat.save_txt samples (in_dir "samples")
+  let samples = G.generate ~theta (`batch_of_size 100) in
+  Mat.save_txt samples ~out:(in_dir "samples")
 
 
 let save_prms theta file =
-  Mat.save_txt (AD.unpack_arr theta |> Mat.transpose) (in_dir file)
+  Mat.save_txt (AD.unpack_arr theta |> Mat.transpose) ~out:(in_dir file)
 
 
 let theta =
@@ -55,13 +56,15 @@ let theta =
   | None -> F.random_prms ()
 
 
+let _ = test_gen theta
+
 (* Optimization of the flow *)
 
 module Prms = struct
   type 'a t = { theta : 'a } [@@deriving prms]
 end
 
-let f a =
+let f _ a =
   let theta = a.Prms.theta in
   let minibatch = D.sample_batch batch_size in
   AD.Maths.neg (G.log_likelihood minibatch theta)
@@ -81,9 +84,9 @@ let stop s =
   then (
     let c = O.fv s in
     Printf.printf " -- %05f%!" c;
-    Mat.save_txt ~append:true Mat.(create 1 1 c) (in_dir "cost");
+    Mat.save_txt ~append:true Mat.(create 1 1 c) ~out:(in_dir "cost");
     let theta = (O.prms s).theta in
-    Mat.save_txt (AD.unpack_arr theta |> Mat.transpose) (in_dir "prms");
+    Mat.save_txt (AD.unpack_arr theta |> Mat.transpose) ~out:(in_dir "prms");
     test_gen theta;
     save_density theta);
   false

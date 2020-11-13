@@ -21,4 +21,4 @@ let save_density ~res log_density filename =
   in
   Util.dump_heatmap filename (grid, grid, d);
   let dx2 = Maths.sqr (5. /. float res) in
-  Mat.save_txt (Mat.create 1 1 (dx2 *. Mat.sum' d)) (filename ^ "_sum")
+  Mat.save_txt (Mat.create 1 1 (dx2 *. Mat.sum' d)) ~out:(filename ^ "_sum")
